@@ -1,28 +1,31 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ChartData, ChartOptions } from 'chart.js'
-import { fetchMachineStatus } from '../utils/mockBackend'
+import { fetchMachineData } from '../utils/mockBackend'
 import DonutChart from '@/components/charts/DonutChart.vue'
-// import MachineList from '../views/MachineList.vue'
 
-interface MachineStatus {
-  生產: number
-  閒置: number
-  當機: number
-  裝機: number
-  工程借機: number
-  其他: number
+interface StatusChange {
+  status: '生產' | '閒置' | '當機' | '裝機' | '工程借機' | '其他'
+  startTime: string
 }
 
-const machineStatus = ref<MachineStatus>({
-  生產: 0,
-  閒置: 0,
-  當機: 0,
-  裝機: 0,
-  工程借機: 0,
-  其他: 0
-})
+interface Machine {
+  id: string
+  statusChanges: StatusChange[]
+  currentStatus: string
+}
 
+// Define colors for each status
+const statusColors = {
+  生產: '#84cc16',
+  閒置: '#f97316',
+  當機: '#ef4444',
+  裝機: '#fbbf24',
+  工程借機: '#06b6d4',
+  其他: '#64748b'
+}
+
+const machines = ref<Machine[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
@@ -30,8 +33,8 @@ const fetchData = async () => {
   loading.value = true
   error.value = null
   try {
-    machineStatus.value = await fetchMachineStatus()
-    console.log(machineStatus)
+    machines.value = await fetchMachineData()
+    console.log(machines.value)
   } catch (e) {
     error.value = 'Failed to fetch data'
     console.error(e)
@@ -44,12 +47,24 @@ onMounted(() => {
   fetchData()
 })
 
-const chartData = computed<ChartData<'doughnut'>>(() => ({
-  labels: Object.keys(machineStatus.value),
+const statusCounts = computed(() => {
+  return machines.value.reduce(
+    (acc, machine) => {
+      acc[machine.currentStatus] = (acc[machine.currentStatus] || 0) + 1
+      return acc
+    },
+    {} as Record<StatusChange['status'], number>
+  )
+})
+
+const mainChartData = computed<ChartData<'doughnut'>>(() => ({
+  labels: Object.keys(statusCounts.value),
   datasets: [
     {
-      data: Object.values(machineStatus.value),
-      backgroundColor: ['#84cc16', '#f97316', '#ef4444', '#fbbf24', '#06b6d4', '#64748b']
+      data: Object.values(statusCounts.value),
+      backgroundColor: Object.keys(statusCounts.value).map(
+        (status) => statusColors[status as Status]
+      )
     }
   ]
 }))
@@ -63,12 +78,10 @@ const chartOptions: ChartOptions<'doughnut'> = {
   }
 }
 
-const totalMachines = computed(() =>
-  Object.values(machineStatus.value).reduce((sum, count) => sum + count, 0)
-)
+const totalMachines = computed(() => machines.value.length)
 
 // error machine logic
-const errorEquipmentCount = computed(() => machineStatus.value['當機'])
+const errorEquipmentCount = computed(() => statusCounts.value['當機'] || 0)
 
 const errorEquipmentRatio = computed(() =>
   totalMachines.value > 0
@@ -76,21 +89,25 @@ const errorEquipmentRatio = computed(() =>
     : '0'
 )
 
-const errorChartData = computed<ChartData<'doughnut'>>(() => ({
-  labels: ['當機', '正常'],
-  datasets: [
-    {
-      data: [errorEquipmentCount.value, totalMachines.value - errorEquipmentCount.value],
-      backgroundColor: ['#ef4444', '#e2e8f0']
-    }
-  ]
-}))
+// Prepare data for error chart
+const errorChartData = computed<ChartData<'doughnut'>>(() => {
+  const errorCount = statusCounts.value['當機'] || 0
+  const totalMachines = machines.value.length
+  return {
+    labels: ['當機', '正常'],
+    datasets: [
+      {
+        data: [errorCount, totalMachines - errorCount],
+        backgroundColor: [statusColors['當機'], '#e2e8f0']
+      }
+    ]
+  }
+})
 
 // working machine logic
-
-const workingCount = computed(() => machineStatus.value['生產'])
-const packagingCount = computed(() => machineStatus.value['裝機'])
-const borrowingCount = computed(() => machineStatus.value['工程借機'])
+const workingCount = computed(() => statusCounts.value['生產'] || 0)
+const packagingCount = computed(() => statusCounts.value['裝機'] || 0)
+const borrowingCount = computed(() => statusCounts.value['工程借機'] || 0)
 
 const efficientRatio = computed(() => {
   return totalMachines.value > 0
@@ -101,20 +118,27 @@ const efficientRatio = computed(() => {
     : '0'
 })
 
-const workingChartData = computed<ChartData<'doughnut'>>(() => ({
-  labels: ['生產', '裝機', '工程借機', '無效工作'],
-  datasets: [
-    {
-      data: [
-        workingCount.value,
-        packagingCount.value,
-        borrowingCount.value,
-        totalMachines.value - (workingCount.value + packagingCount.value + borrowingCount.value)
-      ],
-      backgroundColor: ['#84cc16', '#fbbf24', '#06b6d4', '#e2e8f0']
-    }
-  ]
-}))
+// Prepare data for working status chart
+const workingChartData = computed<ChartData<'doughnut'>>(() => {
+  const working = statusCounts.value['生產'] || 0
+  const packaging = statusCounts.value['裝機'] || 0
+  const borrowing = statusCounts.value['工程借機'] || 0
+  const totalMachines = machines.value.length
+  return {
+    labels: ['生產', '裝機', '工程借機', '無效工作'],
+    datasets: [
+      {
+        data: [working, packaging, borrowing, totalMachines - (working + packaging + borrowing)],
+        backgroundColor: [
+          statusColors['生產'],
+          statusColors['裝機'],
+          statusColors['工程借機'],
+          '#e2e8f0'
+        ]
+      }
+    ]
+  }
+})
 
 const centerText = computed(() => `Total: ${totalMachines.value}`)
 
@@ -135,7 +159,7 @@ setInterval(fetchData, 500000) // Fetch new data every 5 seconds
         <p class="text-lg font-bold">當前機台狀態分佈</p>
         <div class="chart-wrapper">
           <DonutChart
-            :chartData="chartData"
+            :chartData="mainChartData"
             :chartOptions="chartOptions"
             :centerText="centerText"
             @sectionClick="handleSectionClick"
@@ -166,9 +190,6 @@ setInterval(fetchData, 500000) // Fetch new data every 5 seconds
           <p>有效生產設備數: {{ workingCount + packagingCount + borrowingCount }}</p>
         </div>
       </div>
-      <!-- <div class="flex w-full gap-4 mt-4">
-        <MachineList class="w-full" />
-      </div> -->
     </template>
   </div>
 </template>
