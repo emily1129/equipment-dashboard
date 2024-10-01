@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ChartData, ChartOptions } from 'chart.js'
-import { fetchMachineData } from '../utils/mockBackend'
+import { fetchMachineData, type Machine } from '../api/machines'
 import DonutChart from '@/components/charts/DonutChart.vue'
+import MachineList from '../views/MachineList.vue'
 
 interface StatusChange {
   status: '生產' | '閒置' | '當機' | '裝機' | '工程借機' | '其他'
@@ -169,28 +170,41 @@ setInterval(fetchData, 500000) // Fetch new data every 5 seconds
       <div class="flex md:flex-row flex-col w-full gap-4">
         <div class="flex-1 border-2 border-gray-200 rounded-md p-4">
           <p class="text-lg font-bold">當前當機異常比例</p>
-          <div class="chart-wrapper">
-            <DonutChart
-              :chartData="errorChartData"
-              :chartOptions="chartOptions"
-              :centerText="`${errorEquipmentRatio}%`"
-            />
+          <div>
+            <p class="my-2 m-0 text-left text-3xl font-bold text-red-500">
+              {{ ((errorEquipmentCount / totalMachines) * 100).toFixed(1) }}%
+            </p>
+            <div class="chart-wrapper">
+              <DonutChart
+                :chartData="errorChartData"
+                :chartOptions="chartOptions"
+                :centerText="`${errorEquipmentRatio}%`"
+              />
+            </div>
           </div>
-          <p>當機設備數: {{ errorEquipmentCount }}</p>
         </div>
         <div class="flex-1 border-2 border-gray-200 rounded-md p-4">
           <p class="text-lg font-bold">當前有效生產狀態比例</p>
-          <div class="chart-wrapper">
-            <DonutChart
-              :chartData="workingChartData"
-              :chartOptions="chartOptions"
-              :centerText="`${efficientRatio}%`"
-            />
+          <div>
+            <p class="my-2 m-0 text-left text-3xl font-bold text-green-500">
+              {{
+                (((workingCount + packagingCount + borrowingCount) / totalMachines) * 100).toFixed(
+                  1
+                )
+              }}%
+            </p>
+            <div class="chart-wrapper">
+              <DonutChart
+                :chartData="workingChartData"
+                :chartOptions="chartOptions"
+                :centerText="`${efficientRatio}%`"
+              />
+            </div>
           </div>
-          <p>有效生產設備數: {{ workingCount + packagingCount + borrowingCount }}</p>
         </div>
       </div>
     </template>
+    <MachineList :machines="machines" :loading="loading" :error="error" class="my-5" />
   </div>
 </template>
 

@@ -47,7 +47,7 @@ const centerTextPlugin: Plugin<'doughnut'> = {
 
 const defaultOptions: ChartOptions<'doughnut'> = {
   responsive: true,
-  cutout: '70%',
+  cutout: '50%',
   plugins: {
     legend: {
       display: false
@@ -71,8 +71,8 @@ const defaultOptions: ChartOptions<'doughnut'> = {
   elements: {
     arc: {
       borderWidth: 2,
-      hoverOffset: 5,
-      hoverBorderWidth: 3,
+      hoverOffset: 4,
+      hoverBorderWidth: 2,
       hoverBorderColor: 'white'
     }
   }
