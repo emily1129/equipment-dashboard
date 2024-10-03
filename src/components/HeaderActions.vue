@@ -1,18 +1,13 @@
-<script lang="ts">
-import { ref } from 'vue'
-
-const lastUpdated = ref('1 mins ago')
-
-const refresh = () => {
-  // implement refresh logic
-  lastUpdated.value = '5 mins ago'
-}
+<script setup lang="ts">
+defineProps(['lastUpdated'])
+const emit = defineEmits(['refresh-requested'])
 </script>
 
 <template>
   <div class="flex items-center">
-    <button
-      @click="refresh"
+    <!-- TODO: Add refresh button -->
+    <!-- <button
+      @click="emit('refresh-requested')"
       class="flex text-sm border-slate-500 border text-slate-500 px-3 py-1 rounded-md hover:bg-slate-700 hover:text-white transition-colors mr-4"
     >
       <svg
@@ -30,7 +25,7 @@ const refresh = () => {
         />
       </svg>
       <p>更新</p>
-    </button>
-    <span class="text-sm text-gray-600">最後更新時間: {{ this.lastUpdated }}</span>
+    </button> -->
+    <span class="text-sm text-gray-600">Last updated: {{ lastUpdated }}</span>
   </div>
 </template>

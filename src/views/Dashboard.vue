@@ -1,23 +1,20 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ChartData, ChartOptions } from 'chart.js'
-import { fetchMachineData, type Machine } from '../api/machines'
+import type { ChartData, ChartOptions } from 'chart.js'
+// import { fetchMachineData } from '../api/machines'
 import DonutChart from '@/components/charts/DonutChart.vue'
 import MachineList from '../views/MachineList.vue'
+import type { Machine, Status } from '../types/types'
 
-interface StatusChange {
-  status: '生產' | '閒置' | '當機' | '裝機' | '工程借機' | '其他'
-  startTime: string
-}
-
-interface Machine {
-  id: string
-  statusChanges: StatusChange[]
-  currentStatus: string
-}
+// Define props
+const props = defineProps<{
+  machines: Machine[]
+  loading: boolean
+  error: string | null
+}>()
 
 // Define colors for each status
-const statusColors = {
+const statusColors: Record<Status, string> = {
   生產: '#84cc16',
   閒置: '#f97316',
   當機: '#ef4444',
@@ -26,35 +23,13 @@ const statusColors = {
   其他: '#64748b'
 }
 
-const machines = ref<Machine[]>([])
-const loading = ref(false)
-const error = ref<string | null>(null)
-
-const fetchData = async () => {
-  loading.value = true
-  error.value = null
-  try {
-    machines.value = await fetchMachineData()
-    console.log(machines.value)
-  } catch (e) {
-    error.value = 'Failed to fetch data'
-    console.error(e)
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(() => {
-  fetchData()
-})
-
 const statusCounts = computed(() => {
-  return machines.value.reduce(
+  return props.machines.reduce(
     (acc, machine) => {
       acc[machine.currentStatus] = (acc[machine.currentStatus] || 0) + 1
       return acc
     },
-    {} as Record<StatusChange['status'], number>
+    {} as Record<Status, number>
   )
 })
 
@@ -74,12 +49,12 @@ const chartOptions: ChartOptions<'doughnut'> = {
   responsive: true,
   plugins: {
     legend: {
-      position: 'right' as const
+      position: 'right'
     }
   }
 }
 
-const totalMachines = computed(() => machines.value.length)
+const totalMachines = computed(() => props.machines.length)
 
 // error machine logic
 const errorEquipmentCount = computed(() => statusCounts.value['當機'] || 0)
@@ -93,12 +68,12 @@ const errorEquipmentRatio = computed(() =>
 // Prepare data for error chart
 const errorChartData = computed<ChartData<'doughnut'>>(() => {
   const errorCount = statusCounts.value['當機'] || 0
-  const totalMachines = machines.value.length
+  // const totalMachines = props.machines.length
   return {
     labels: ['當機', '正常'],
     datasets: [
       {
-        data: [errorCount, totalMachines - errorCount],
+        data: [errorCount, totalMachines.value - errorCount],
         backgroundColor: [statusColors['當機'], '#e2e8f0']
       }
     ]
@@ -124,7 +99,7 @@ const workingChartData = computed<ChartData<'doughnut'>>(() => {
   const working = statusCounts.value['生產'] || 0
   const packaging = statusCounts.value['裝機'] || 0
   const borrowing = statusCounts.value['工程借機'] || 0
-  const totalMachines = machines.value.length
+  const totalMachines = props.machines.length
   return {
     labels: ['生產', '裝機', '工程借機', '無效工作'],
     datasets: [
@@ -148,7 +123,7 @@ const handleSectionClick = (label: string, value: number) => {
 }
 
 // Simulate real-time updates
-setInterval(fetchData, 500000) // Fetch new data every 5 seconds
+// setInterval(fetchData, 500000) // Fetch new data every 5 seconds
 </script>
 
 <template>
@@ -172,7 +147,7 @@ setInterval(fetchData, 500000) // Fetch new data every 5 seconds
           <p class="text-lg font-bold">當前當機異常比例</p>
           <div>
             <p class="my-2 m-0 text-left text-3xl font-bold text-red-500">
-              {{ ((errorEquipmentCount / totalMachines) * 100).toFixed(1) }}%
+              {{ errorEquipmentRatio }}%
             </p>
             <div class="chart-wrapper">
               <DonutChart
@@ -187,11 +162,7 @@ setInterval(fetchData, 500000) // Fetch new data every 5 seconds
           <p class="text-lg font-bold">當前有效生產狀態比例</p>
           <div>
             <p class="my-2 m-0 text-left text-3xl font-bold text-green-500">
-              {{
-                (((workingCount + packagingCount + borrowingCount) / totalMachines) * 100).toFixed(
-                  1
-                )
-              }}%
+              {{ efficientRatio }}%
             </p>
             <div class="chart-wrapper">
               <DonutChart
