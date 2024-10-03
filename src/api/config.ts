@@ -6,8 +6,6 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   }
-  // withCredentials: true, // send cookies when cross-domain requests
-  // timeout: 5000 // request timeout
 })
 
 export default api
