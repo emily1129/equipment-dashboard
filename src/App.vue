@@ -2,8 +2,46 @@
 import { ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import HeaderActions from './components/HeaderActions.vue'
+import { fetchMachineData, updateMachineData } from './api/machines'
+import type { Machine } from './types/types'
 
 const currentPage = ref('機台狀態維護')
+
+const machines = ref<Machine[]>([])
+const lastUpdated = ref('')
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+const fetchData = async () => {
+  loading.value = true
+  error.value = null
+  try {
+    machines.value = await fetchMachineData()
+    lastUpdated.value = new Date().toLocaleTimeString()
+    console.log(machines.value)
+  } catch (e) {
+    error.value = 'Failed to fetch data'
+    console.error(e)
+  } finally {
+    loading.value = false
+  }
+}
+
+fetchData()
+
+// const updateData = async () => {
+//   loading.value = true
+//   error.value = null
+//   try {
+//     machines.value = await updateMachineData()
+//     lastUpdated.value = new Date().toLocaleTimeString()
+//   } catch (e) {
+//     error.value = 'Failed to update data'
+//     console.error(e)
+//   } finally {
+//     loading.value = false
+//   }
+// }
 </script>
 
 <template>
@@ -68,10 +106,10 @@ const currentPage = ref('機台狀態維護')
     <main class="flex-1 flex flex-col bg-white">
       <header class="flex justify-between items-center px-8 pt-6 pb-4 border-b border-gray-200">
         <h1 class="text-xl font-semibold">{{ currentPage }}</h1>
-        <HeaderActions />
+        <HeaderActions @refresh-requested="updateData" :lastUpdated="lastUpdated" />
       </header>
       <div class="flex-1 py-4 overflow-auto">
-        <RouterView />
+        <RouterView :machines="machines" :loading="loading" :error="error" />
       </div>
     </main>
   </div>
