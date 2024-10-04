@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { h, ref, computed, onMounted, watch } from 'vue'
-import { NDataTable, NSpace, NButton, NSelect, NInput } from 'naive-ui'
+import { NDataTable, NSpace, NSelect, NInput } from 'naive-ui'
 import type { DataTableColumns, SelectOption } from 'naive-ui'
 import DonutChart from '@/components/charts/DonutChart.vue'
-import { ChartData, ChartOptions } from 'chart.js'
+import type { ChartData, ChartOptions } from 'chart.js'
 
 interface StatusChange {
   status: '生產' | '閒置' | '當機' | '裝機' | '工程借機' | '其他'
@@ -45,11 +45,14 @@ const sorter = ref<{ columnKey: string | null; order: 'ascend' | 'descend' | nul
   order: null
 })
 
-const expandedRowKeys = ref<string[]>([])
+type RowKey = string | number
 
-const handleExpandChange = (keys: string[]) => {
-  expandedRowKeys.value = keys
+const expandedRowKeys = ref<RowKey[]>([])
+
+const handleExpandChange = (keys: RowKey[]) => {
+  expandedRowKeys.value = keys // accepts both string and number
 }
+
 // Add this method to programmatically expand a row
 const expandRowById = (id: string) => {
   if (!expandedRowKeys.value.includes(id)) {
@@ -80,10 +83,14 @@ const filteredAndSortedData = computed(() => {
   // Apply sorting
   if (sorter.value.columnKey) {
     result = [...result].sort((a, b) => {
-      let compareA = a[sorter.value.columnKey as keyof Machine]
-      let compareB = b[sorter.value.columnKey as keyof Machine]
+      let compareA: string | number
+      let compareB: string | number
 
-      // Special handling for lastUpdated and productionRatio
+      // default comparison by string (handles 'id' and 'currentStatus')
+      compareA = a[sorter.value.columnKey as keyof Machine] as string
+      compareB = b[sorter.value.columnKey as keyof Machine] as string
+
+      // handle lastUpdated and productionRatio
       if (sorter.value.columnKey === 'lastUpdated') {
         compareA = getLastUpdated(a)
         compareB = getLastUpdated(b)

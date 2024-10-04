@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { RouterLink, RouterView } from 'vue-router'
 import HeaderActions from './components/HeaderActions.vue'
-import { fetchMachineData, updateMachineData } from './api/machines'
+import { fetchMachineData } from './api/machines'
 import type { Machine } from './types/types'
 
 const currentPage = ref('機台狀態維護')
@@ -28,20 +27,6 @@ const fetchData = async () => {
 }
 
 fetchData()
-
-// const updateData = async () => {
-//   loading.value = true
-//   error.value = null
-//   try {
-//     machines.value = await updateMachineData()
-//     lastUpdated.value = new Date().toLocaleTimeString()
-//   } catch (e) {
-//     error.value = 'Failed to update data'
-//     console.error(e)
-//   } finally {
-//     loading.value = false
-//   }
-// }
 </script>
 
 <template>
@@ -50,7 +35,7 @@ fetchData()
       <div class="w-full bg-gray-100 border-b md:border-r border-gray-200">
         <div class="flex justify-between px-4">
           <p class="font-extrabold text-3xl py-5">機台狀態看板系統</p>
-          <HeaderActions @refresh-requested="updateData" :lastUpdated="lastUpdated" />
+          <HeaderActions :lastUpdated="lastUpdated" />
         </div>
         <nav class="flex bg-slate-300 w-full">
           <RouterLink
