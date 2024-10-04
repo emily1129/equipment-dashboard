@@ -1,55 +1,46 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ChartData, ChartOptions } from 'chart.js'
-import { fetchMachineStatus } from '../utils/mockBackend'
+import type { ChartData, ChartOptions } from 'chart.js'
+// import { fetchMachineData } from '../api/machines'
 import DonutChart from '@/components/charts/DonutChart.vue'
-// import MachineList from '../views/MachineList.vue'
+import MachineList from '../views/MachineList.vue'
+import type { Machine, Status } from '../types/types'
 
-interface MachineStatus {
-  生產: number
-  閒置: number
-  當機: number
-  裝機: number
-  工程借機: number
-  其他: number
+// Define props
+const props = defineProps<{
+  machines: Machine[]
+  loading: boolean
+  error: string | null
+}>()
+
+// Define colors for each status
+const statusColors: Record<Status, string> = {
+  生產: '#84cc16',
+  閒置: '#f97316',
+  當機: '#ef4444',
+  裝機: '#fbbf24',
+  工程借機: '#06b6d4',
+  其他: '#64748b'
 }
 
-const machineStatus = ref<MachineStatus>({
-  生產: 0,
-  閒置: 0,
-  當機: 0,
-  裝機: 0,
-  工程借機: 0,
-  其他: 0
+const statusCounts = computed(() => {
+  return props.machines.reduce(
+    (acc, machine) => {
+      acc[machine.currentStatus] = (acc[machine.currentStatus] || 0) + 1
+      return acc
+    },
+    {} as Record<Status, number>
+  )
 })
 
-const loading = ref(false)
-const error = ref<string | null>(null)
-
-const fetchData = async () => {
-  loading.value = true
-  error.value = null
-  try {
-    machineStatus.value = await fetchMachineStatus()
-    console.log(machineStatus)
-  } catch (e) {
-    error.value = 'Failed to fetch data'
-    console.error(e)
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(() => {
-  fetchData()
-})
-
-const chartData = computed<ChartData<'doughnut'>>(() => ({
-  labels: Object.keys(machineStatus.value),
+const mainChartData = computed<ChartData<'doughnut'>>(() => ({
+  labels: Object.keys(statusCounts.value),
   datasets: [
     {
-      data: Object.values(machineStatus.value),
-      backgroundColor: ['#84cc16', '#f97316', '#ef4444', '#fbbf24', '#06b6d4', '#64748b']
+      data: Object.values(statusCounts.value),
+      backgroundColor: Object.keys(statusCounts.value).map(
+        (status) => statusColors[status as Status]
+      )
     }
   ]
 }))
@@ -58,17 +49,15 @@ const chartOptions: ChartOptions<'doughnut'> = {
   responsive: true,
   plugins: {
     legend: {
-      position: 'right' as const
+      position: 'right'
     }
   }
 }
 
-const totalMachines = computed(() =>
-  Object.values(machineStatus.value).reduce((sum, count) => sum + count, 0)
-)
+const totalMachines = computed(() => props.machines.length)
 
 // error machine logic
-const errorEquipmentCount = computed(() => machineStatus.value['當機'])
+const errorEquipmentCount = computed(() => statusCounts.value['當機'] || 0)
 
 const errorEquipmentRatio = computed(() =>
   totalMachines.value > 0
@@ -76,21 +65,25 @@ const errorEquipmentRatio = computed(() =>
     : '0'
 )
 
-const errorChartData = computed<ChartData<'doughnut'>>(() => ({
-  labels: ['當機', '正常'],
-  datasets: [
-    {
-      data: [errorEquipmentCount.value, totalMachines.value - errorEquipmentCount.value],
-      backgroundColor: ['#ef4444', '#e2e8f0']
-    }
-  ]
-}))
+// Prepare data for error chart
+const errorChartData = computed<ChartData<'doughnut'>>(() => {
+  const errorCount = statusCounts.value['當機'] || 0
+  // const totalMachines = props.machines.length
+  return {
+    labels: ['當機', '正常'],
+    datasets: [
+      {
+        data: [errorCount, totalMachines.value - errorCount],
+        backgroundColor: [statusColors['當機'], '#e2e8f0']
+      }
+    ]
+  }
+})
 
 // working machine logic
-
-const workingCount = computed(() => machineStatus.value['生產'])
-const packagingCount = computed(() => machineStatus.value['裝機'])
-const borrowingCount = computed(() => machineStatus.value['工程借機'])
+const workingCount = computed(() => statusCounts.value['生產'] || 0)
+const packagingCount = computed(() => statusCounts.value['裝機'] || 0)
+const borrowingCount = computed(() => statusCounts.value['工程借機'] || 0)
 
 const efficientRatio = computed(() => {
   return totalMachines.value > 0
@@ -101,20 +94,27 @@ const efficientRatio = computed(() => {
     : '0'
 })
 
-const workingChartData = computed<ChartData<'doughnut'>>(() => ({
-  labels: ['生產', '裝機', '工程借機', '無效工作'],
-  datasets: [
-    {
-      data: [
-        workingCount.value,
-        packagingCount.value,
-        borrowingCount.value,
-        totalMachines.value - (workingCount.value + packagingCount.value + borrowingCount.value)
-      ],
-      backgroundColor: ['#84cc16', '#fbbf24', '#06b6d4', '#e2e8f0']
-    }
-  ]
-}))
+// Prepare data for working status chart
+const workingChartData = computed<ChartData<'doughnut'>>(() => {
+  const working = statusCounts.value['生產'] || 0
+  const packaging = statusCounts.value['裝機'] || 0
+  const borrowing = statusCounts.value['工程借機'] || 0
+  const totalMachines = props.machines.length
+  return {
+    labels: ['生產', '裝機', '工程借機', '無效工作'],
+    datasets: [
+      {
+        data: [working, packaging, borrowing, totalMachines - (working + packaging + borrowing)],
+        backgroundColor: [
+          statusColors['生產'],
+          statusColors['裝機'],
+          statusColors['工程借機'],
+          '#e2e8f0'
+        ]
+      }
+    ]
+  }
+})
 
 const centerText = computed(() => `Total: ${totalMachines.value}`)
 
@@ -123,11 +123,11 @@ const handleSectionClick = (label: string, value: number) => {
 }
 
 // Simulate real-time updates
-setInterval(fetchData, 500000) // Fetch new data every 5 seconds
+// setInterval(fetchData, 500000) // Fetch new data every 5 seconds
 </script>
 
 <template>
-  <div class="px-8 flex flex-col w-full">
+  <div class="flex flex-col w-full">
     <div v-if="loading">Loading...</div>
     <div v-else-if="error">{{ error }}</div>
     <template v-else>
@@ -135,7 +135,7 @@ setInterval(fetchData, 500000) // Fetch new data every 5 seconds
         <p class="text-lg font-bold">當前機台狀態分佈</p>
         <div class="chart-wrapper">
           <DonutChart
-            :chartData="chartData"
+            :chartData="mainChartData"
             :chartOptions="chartOptions"
             :centerText="centerText"
             @sectionClick="handleSectionClick"
@@ -145,31 +145,37 @@ setInterval(fetchData, 500000) // Fetch new data every 5 seconds
       <div class="flex md:flex-row flex-col w-full gap-4">
         <div class="flex-1 border-2 border-gray-200 rounded-md p-4">
           <p class="text-lg font-bold">當前當機異常比例</p>
-          <div class="chart-wrapper">
-            <DonutChart
-              :chartData="errorChartData"
-              :chartOptions="chartOptions"
-              :centerText="`${errorEquipmentRatio}%`"
-            />
+          <div>
+            <p class="my-2 m-0 text-left text-3xl font-bold text-red-500">
+              {{ errorEquipmentRatio }}%
+            </p>
+            <div class="chart-wrapper">
+              <DonutChart
+                :chartData="errorChartData"
+                :chartOptions="chartOptions"
+                :centerText="`${errorEquipmentRatio}%`"
+              />
+            </div>
           </div>
-          <p>當機設備數: {{ errorEquipmentCount }}</p>
         </div>
         <div class="flex-1 border-2 border-gray-200 rounded-md p-4">
           <p class="text-lg font-bold">當前有效生產狀態比例</p>
-          <div class="chart-wrapper">
-            <DonutChart
-              :chartData="workingChartData"
-              :chartOptions="chartOptions"
-              :centerText="`${efficientRatio}%`"
-            />
+          <div>
+            <p class="my-2 m-0 text-left text-3xl font-bold text-green-500">
+              {{ efficientRatio }}%
+            </p>
+            <div class="chart-wrapper">
+              <DonutChart
+                :chartData="workingChartData"
+                :chartOptions="chartOptions"
+                :centerText="`${efficientRatio}%`"
+              />
+            </div>
           </div>
-          <p>有效生產設備數: {{ workingCount + packagingCount + borrowingCount }}</p>
         </div>
       </div>
-      <!-- <div class="flex w-full gap-4 mt-4">
-        <MachineList class="w-full" />
-      </div> -->
     </template>
+    <MachineList :machines="machines" :loading="loading" :error="error" class="my-5" />
   </div>
 </template>
 
