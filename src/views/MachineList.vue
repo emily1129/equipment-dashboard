@@ -293,16 +293,23 @@ watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
 
 <template>
   <div>
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-2xl font-bold">機台列表 共{{ filteredAndSortedData.length }}台</h2>
-      <div class="flex space-x-4">
-        <NInput v-model:value="searchQuery" type="text" placeholder="搜尋機台編號" />
+    <div
+      class="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center mb-4"
+    >
+      <h2 class="text-xl font-bold text-left">機台列表 共{{ filteredAndSortedData.length }}台</h2>
+      <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+        <NInput
+          v-model:value="searchQuery"
+          type="text"
+          placeholder="搜尋機台編號"
+          class="w-full sm:w-64"
+        />
         <NSelect
           v-model:value="selectedStatuses"
           :options="statusOptions"
           multiple
           clearable
-          class="w-64"
+          class="w-full sm:w-64"
           placeholder="選擇狀態"
         />
       </div>

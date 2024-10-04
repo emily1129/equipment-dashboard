@@ -127,7 +127,7 @@ const handleSectionClick = (label: string, value: number) => {
 </script>
 
 <template>
-  <div class="px-8 flex flex-col w-full">
+  <div class="flex flex-col w-full">
     <div v-if="loading">Loading...</div>
     <div v-else-if="error">{{ error }}</div>
     <template v-else>

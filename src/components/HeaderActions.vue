@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { RouterLink, RouterView } from 'vue-router'
+
 defineProps(['lastUpdated'])
 const emit = defineEmits(['refresh-requested'])
 </script>
