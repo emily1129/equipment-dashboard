@@ -50,70 +50,15 @@ type RowKey = string | number
 const expandedRowKeys = ref<RowKey[]>([])
 
 const handleExpandChange = (keys: RowKey[]) => {
-  expandedRowKeys.value = keys // accepts both string and number
+  expandedRowKeys.value = keys
 }
 
-// Add this method to programmatically expand a row
 const expandRowById = (id: string) => {
   if (!expandedRowKeys.value.includes(id)) {
     expandedRowKeys.value.push(id)
   }
 }
 
-const filteredAndSortedData = computed(() => {
-  let result = props.machines
-
-  // Apply filtering
-  if (selectedStatuses.value.length > 0) {
-    result = result.filter((machine) => selectedStatuses.value.includes(machine.currentStatus))
-  }
-
-  // Apply search filtering
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(
-      (machine) =>
-        machine.id.toLowerCase().includes(query) ||
-        machine.currentStatus.toLowerCase().includes(query) ||
-        getLastUpdated(machine).toLowerCase().includes(query) ||
-        calculateEffectiveProductionRatio(machine).ratio.toString().includes(query)
-    )
-  }
-
-  // Apply sorting
-  if (sorter.value.columnKey) {
-    result = [...result].sort((a, b) => {
-      let compareA: string | number
-      let compareB: string | number
-
-      // default comparison by string (handles 'id' and 'currentStatus')
-      compareA = a[sorter.value.columnKey as keyof Machine] as string
-      compareB = b[sorter.value.columnKey as keyof Machine] as string
-
-      // handle lastUpdated and productionRatio
-      if (sorter.value.columnKey === 'lastUpdated') {
-        compareA = getLastUpdated(a)
-        compareB = getLastUpdated(b)
-      } else if (sorter.value.columnKey === 'productionRatio') {
-        compareA = calculateEffectiveProductionRatio(a).ratio
-        compareB = calculateEffectiveProductionRatio(b).ratio
-      }
-
-      if (compareA < compareB) return sorter.value.order === 'ascend' ? -1 : 1
-      if (compareA > compareB) return sorter.value.order === 'ascend' ? 1 : -1
-      return 0
-    })
-  }
-
-  return result
-})
-
-const handleSorterChange = (sorterInfo: {
-  columnKey: string
-  order: 'ascend' | 'descend' | null
-}) => {
-  sorter.value = sorterInfo
-}
 const getStatusInfo = (status: string) => {
   return (
     statusMap[status as keyof typeof statusMap] || {
@@ -160,7 +105,7 @@ const calculateEffectiveProductionRatio = (
       productiveTime += duration
     }
 
-    if (index === array.length - 1 && change.status === '當機' && duration > 10 * 60 * 60 * 1000) {
+    if (index === array.length - 1 && change.status === '當機' && duration > 24 * 60 * 60 * 1000) {
       isAnomaly = true
     }
   })
@@ -213,7 +158,7 @@ const columns: DataTableColumns<Machine> = [
     }
   },
   {
-    title: '當前狀態的起始時間',
+    title: '當前狀態之起始時間',
     key: 'lastUpdated',
     sorter: true,
     render(row: Machine) {
@@ -245,43 +190,100 @@ const columns: DataTableColumns<Machine> = [
         }
       )
     }
-  },
-  {
-    type: 'expand',
-    renderExpand: (row: Machine) => {
-      return h(NDataTable, {
-        columns: [
-          {
-            title: '狀態',
-            key: 'status',
-            render: (rowData: { status: string }) => {
-              const statusInfo = getStatusInfo(rowData.status)
-              return h(
-                'span',
-                {
-                  class: ['font-bold px-3 py-1 rounded-md text-xs', statusInfo.color]
-                },
-                statusInfo.name
-              )
-            }
-          },
-          {
-            title: '開始時間',
-            key: 'startTime',
-            render: (rowData: { startTime: string }) => formatDateString(rowData.startTime)
-          }
-        ],
-        data: row.statusChanges.map((change, index, array) => ({
-          status: change.status,
-          startTime: change.startTime,
-          endTime: array[index + 1]?.startTime || new Date().toISOString()
-        })),
-        bordered: false,
-        size: 'small'
-      })
-    }
   }
 ]
+
+const expandColumn = {
+  type: 'expand',
+  expandable: (rowData: Machine) => rowData.statusChanges.length > 0,
+  renderExpand: (rowData: Machine) => {
+    return h(NDataTable, {
+      columns: [
+        {
+          title: '歷史狀態',
+          key: 'status',
+          render: (rowData: { status: string }) => {
+            const statusInfo = getStatusInfo(rowData.status)
+            return h(
+              'span',
+              {
+                class: ['font-bold px-3 py-1 rounded-md text-xs', statusInfo.color]
+              },
+              statusInfo.name
+            )
+          }
+        },
+        {
+          title: '開始時間',
+          key: 'startTime',
+          render: (rowData: { startTime: string }) => formatDateString(rowData.startTime)
+        }
+      ],
+      data: rowData.statusChanges.map((change, index) => ({
+        key: `${rowData.id}-${index}`,
+        status: change.status,
+        startTime: change.startTime
+      })),
+      bordered: false,
+      size: 'small'
+    })
+  }
+}
+
+columns.unshift(expandColumn)
+
+const filteredAndSortedData = computed(() => {
+  let result = props.machines.map((machine) => ({
+    key: machine.id,
+    ...machine
+  }))
+
+  if (selectedStatuses.value.length > 0) {
+    result = result.filter((machine) => selectedStatuses.value.includes(machine.currentStatus))
+  }
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(
+      (machine) =>
+        machine.id.toLowerCase().includes(query) ||
+        machine.currentStatus.toLowerCase().includes(query) ||
+        getLastUpdated(machine).toLowerCase().includes(query) ||
+        calculateEffectiveProductionRatio(machine).ratio.toString().includes(query)
+    )
+  }
+
+  if (sorter.value.columnKey) {
+    result = [...result].sort((a, b) => {
+      let compareA: string | number
+      let compareB: string | number
+
+      compareA = a[sorter.value.columnKey as keyof Machine] as string
+      compareB = b[sorter.value.columnKey as keyof Machine] as string
+
+      if (sorter.value.columnKey === 'lastUpdated') {
+        compareA = getLastUpdated(a)
+        compareB = getLastUpdated(b)
+      } else if (sorter.value.columnKey === 'productionRatio') {
+        compareA = calculateEffectiveProductionRatio(a).ratio
+        compareB = calculateEffectiveProductionRatio(b).ratio
+      }
+
+      if (compareA < compareB) return sorter.value.order === 'ascend' ? -1 : 1
+      if (compareA > compareB) return sorter.value.order === 'ascend' ? 1 : -1
+      return 0
+    })
+  }
+
+  return result
+})
+
+const handleSorterChange = (sorterInfo: {
+  columnKey: string
+  order: 'ascend' | 'descend' | null
+}) => {
+  sorter.value = sorterInfo
+}
 
 onMounted(() => {
   console.log(
@@ -290,7 +292,6 @@ onMounted(() => {
   )
 })
 
-// Log for debugging
 watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
   console.log('Selected statuses:', newStatuses)
   console.log('Search query:', newQuery)
@@ -329,7 +330,7 @@ watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
       :bordered="false"
       :expanded-row-keys="expandedRowKeys"
       @update:expanded-row-keys="handleExpandChange"
-      @sorter-change="handleSorterChange"
+      @update:sorter="handleSorterChange"
     />
   </div>
 </template>

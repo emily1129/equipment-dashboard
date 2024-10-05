@@ -183,7 +183,7 @@ const handleSectionClick = (label: string, value: number) => {
 .chart-wrapper {
   position: relative;
   height: 300px;
-  width: 300px;
+  width: 350px;
   margin: 0 auto;
   padding: 0.3rem;
 }
