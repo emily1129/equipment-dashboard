@@ -26,6 +26,6 @@ defineProps(['lastUpdated'])
       </svg>
       <p>更新</p>
     </button> -->
-    <span class="text-sm text-gray-600">Last updated: {{ lastUpdated }}</span>
+    <span class="md:text-sm text-xs text-gray-600">最新更新時間: {{ lastUpdated }}</span>
   </div>
 </template>

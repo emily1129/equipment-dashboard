@@ -61,7 +61,7 @@
 body {
   min-height: 100vh;
   color: var(--color-text);
-  background: var(--color-background);
+  background: linear-gradient(135deg, #e8eeff 0%, #f3e9ff 100%);
   transition:
     color 0.5s,
     background-color 0.5s;
@@ -83,4 +83,13 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Add these new styles */
+.bg-white {
+  background-color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
 }

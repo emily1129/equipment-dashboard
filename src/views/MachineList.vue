@@ -27,7 +27,7 @@ const statusMap = {
   生產: { name: '生產', color: 'bg-green-200 text-green-800' },
   閒置: { name: '閒置', color: 'bg-orange-200 text-orange-800' },
   當機: { name: '當機', color: 'bg-red-200 text-red-800' },
-  裝機: { name: '裝機', color: 'bg-blue-200 text-blue-800' },
+  裝機: { name: '裝機', color: 'bg-cyan-200 text-cyan-800' },
   工程借機: { name: '工程借機', color: 'bg-purple-200 text-purple-800' },
   其他: { name: '其他', color: 'bg-gray-200 text-gray-800' }
 }
@@ -105,8 +105,15 @@ const calculateEffectiveProductionRatio = (
       productiveTime += duration
     }
 
-    if (index === array.length - 1 && change.status === '當機' && duration > 24 * 60 * 60 * 1000) {
-      isAnomaly = true
+    // Check for anomaly only for the current (last) status
+    if (index === array.length - 1 && change.status === '當機') {
+      const breakdownDuration = now - new Date(change.startTime).getTime()
+      if (breakdownDuration > 24 * 60 * 60 * 1000) {
+        isAnomaly = true
+        console.log(
+          `Machine ${machine.id} is anomalous. Breakdown duration: ${breakdownDuration / (60 * 60 * 1000)} hours`
+        )
+      }
     }
   })
 
@@ -138,12 +145,12 @@ const chartOptions: ChartOptions<'doughnut'> = {
 
 const columns: DataTableColumns<Machine> = [
   {
-    title: '機台編號',
+    title: () => h('span', { class: 'font-bold' }, '機台編號'),
     key: 'id',
     sorter: true
   },
   {
-    title: '當前狀態',
+    title: () => h('span', { class: 'font-bold' }, '當前狀態'),
     key: 'currentStatus',
     sorter: true,
     render(row: Machine) {
@@ -151,22 +158,36 @@ const columns: DataTableColumns<Machine> = [
       return h(
         'span',
         {
-          class: ['font-bold px-3 py-1 rounded-md text-xs', statusInfo.color]
+          class: [
+            'md:font-bold font-semibold md:px-3 px-2 py-1 rounded-md text-xs whitespace-normal md:whitespace-nowrap w-10 md:w-auto inline-block',
+            statusInfo.color
+          ]
         },
         statusInfo.name
       )
     }
   },
   {
-    title: '當前狀態之起始時間',
+    title: () => h('span', { class: 'font-bold' }, '當前狀態之起始時間'),
     key: 'lastUpdated',
     sorter: true,
+    // render(row: Machine) {
+    //   return formatDateString(getLastUpdated(row))
+    // },
     render(row: Machine) {
-      return formatDateString(getLastUpdated(row))
+      const lastUpdated = getLastUpdated(row)
+
+      return h(
+        'span',
+        {
+          class: ['font-ten md:text-sm']
+        },
+        formatDateString(lastUpdated)
+      )
     }
   },
   {
-    title: '有效生產比例',
+    title: () => h('span', { class: 'font-bold' }, '有效生產比例'),
     key: 'productionRatio',
     sorter: true,
     render(row: Machine) {
@@ -183,7 +204,7 @@ const columns: DataTableColumns<Machine> = [
               chartData: getChartData(ratio),
               chartOptions: chartOptions,
               centerText: `${ratio}%`,
-              style: 'width: 40px; height: 40px;'
+              style: 'width: 32px; height: 32px;'
             }),
             `${ratio}%`
           ]
@@ -341,5 +362,13 @@ watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
 }
 :deep(.n-data-table-td:hover) {
   border-color: #848484 !important;
+}
+/* New styles for the table header */
+.custom-table :deep(.n-data-table-th) {
+  background-color: rgb(71, 85, 105, 0.3); /* Change this to your desired background color */
+  color: white;
+}
+.font-ten {
+  font-size: 6px;
 }
 </style>
