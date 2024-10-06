@@ -76,7 +76,7 @@ const handleLinkClick = (pageName: string) => {
         <div class="flex justify-between md:block">
           <p
             class="font-extrabold text-2xl px-4 md:pt-4 md:pb-7 py-4 cursor-pointer"
-            @click="router.push({ name: 'Dashboard' })"
+            @click="router.push({ name: 'HomeDashboard' })"
           >
             機台狀態看板系統
           </p>

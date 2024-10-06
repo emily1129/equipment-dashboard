@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { h, ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
 import { NDataTable, NSpace, NSelect, NInput } from 'naive-ui'
 import type { DataTableColumns, SelectOption } from 'naive-ui'
 import DonutChart from '@/components/charts/DonutChart.vue'
@@ -23,8 +22,6 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const route = useRoute()
-const currentRoute = computed(() => route.path)
 
 const statusMap = {
   生產: { name: '生產', color: 'bg-green-200 text-green-800' },

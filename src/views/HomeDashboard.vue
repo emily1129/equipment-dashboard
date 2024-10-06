@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ChartData, ChartOptions } from 'chart.js'
-import DonutChart from '@/components/charts/DonutChart.vue'
+import ChartComponent from '../components/ChartComponent.vue'
 import Machines from './Machines.vue'
 import type { Machine, Status } from '../types/types'
 
@@ -126,54 +126,35 @@ const handleSectionClick = (label: string, value: number) => {
     <div class="flex text-2xl font-bold text-slate-500" v-if="loading">Loading...</div>
     <div v-else-if="error">{{ error }}</div>
     <template v-else>
-      <div
-        class="w-full border border-slate-300 bg-white/40 shadow-md shadow-slate-200 rounded-xl p-5 mb-4"
-      >
-        <p class="text-lg font-bold">當前機台狀態分佈</p>
-        <div class="chart-wrapper">
-          <DonutChart
-            :chartData="mainChartData"
-            :chartOptions="chartOptions"
-            :centerText="centerText"
-            @sectionClick="handleSectionClick"
-          />
-        </div>
-      </div>
+      <ChartComponent
+        title="當前機台狀態分佈"
+        :chartData="mainChartData"
+        :chartOptions="chartOptions"
+        :centerText="centerText"
+        class="w-full mb-4"
+        @sectionClick="handleSectionClick"
+      />
       <div class="flex md:flex-row flex-col w-full gap-4">
-        <div
-          class="flex-1 border border-slate-300 bg-white/40 shadow-md shadow-slate-200 rounded-xl p-5"
-        >
-          <p class="text-lg font-bold">當前當機異常比例</p>
-          <div>
-            <p class="my-2 m-0 text-left text-3xl font-bold text-red-500">
-              {{ errorEquipmentRatio }}%
-            </p>
-            <div class="chart-wrapper">
-              <DonutChart
-                :chartData="errorChartData"
-                :chartOptions="chartOptions"
-                :centerText="`${errorEquipmentRatio}%`"
-              />
-            </div>
-          </div>
-        </div>
-        <div
-          class="flex-1 border border-slate-300 bg-white/40 shadow-md shadow-slate-200 rounded-xl p-4"
-        >
-          <p class="text-lg font-bold">當前有效生產狀態比例</p>
-          <div>
-            <p class="my-2 m-0 text-left text-3xl font-bold text-green-500">
-              {{ efficientRatio }}%
-            </p>
-            <div class="chart-wrapper">
-              <DonutChart
-                :chartData="workingChartData"
-                :chartOptions="chartOptions"
-                :centerText="`${efficientRatio}%`"
-              />
-            </div>
-          </div>
-        </div>
+        <ChartComponent
+          title="當前當機異常比例"
+          :chartData="errorChartData"
+          :chartOptions="chartOptions"
+          :centerText="`${errorEquipmentRatio}%`"
+          showPercentage
+          :percentage="errorEquipmentRatio"
+          percentageColor="text-red-500"
+          class="flex-1"
+        />
+        <ChartComponent
+          title="當前有效生產狀態比例"
+          :chartData="workingChartData"
+          :chartOptions="chartOptions"
+          :centerText="`${efficientRatio}%`"
+          showPercentage
+          :percentage="efficientRatio"
+          percentageColor="text-green-500"
+          class="flex-1"
+        />
       </div>
     </template>
     <Machines :machines="machines" :loading="loading" :error="error" class="my-5" />
