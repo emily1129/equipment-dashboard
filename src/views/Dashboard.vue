@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import type { ChartData, ChartOptions } from 'chart.js'
-// import { fetchMachineData } from '../api/machines'
 import DonutChart from '@/components/charts/DonutChart.vue'
-import MachineList from '../views/MachineList.vue'
+import Machines from './Machines.vue'
 import type { Machine, Status } from '../types/types'
 
 // Define props
@@ -125,10 +124,12 @@ const handleSectionClick = (label: string, value: number) => {
 
 <template>
   <div class="flex flex-col w-full">
-    <div v-if="loading">Loading...</div>
+    <div class="flex text-2xl font-bold text-slate-500" v-if="loading">Loading...</div>
     <div v-else-if="error">{{ error }}</div>
     <template v-else>
-      <div class="w-full border border-slate-200 bg-white shadow-sm rounded-xl p-5 mb-4">
+      <div
+        class="w-full border border-slate-300 bg-white/40 shadow-md shadow-slate-200 rounded-xl p-5 mb-4"
+      >
         <p class="text-lg font-bold">當前機台狀態分佈</p>
         <div class="chart-wrapper">
           <DonutChart
@@ -140,7 +141,9 @@ const handleSectionClick = (label: string, value: number) => {
         </div>
       </div>
       <div class="flex md:flex-row flex-col w-full gap-4">
-        <div class="flex-1 border border-slate-200 bg-white shadow-sm rounded-xl p-5">
+        <div
+          class="flex-1 border border-slate-300 bg-white/40 shadow-md shadow-slate-200 rounded-xl p-5"
+        >
           <p class="text-lg font-bold">當前當機異常比例</p>
           <div>
             <p class="my-2 m-0 text-left text-3xl font-bold text-red-500">
@@ -155,7 +158,9 @@ const handleSectionClick = (label: string, value: number) => {
             </div>
           </div>
         </div>
-        <div class="flex-1 border border-slate-200 bg-white shadow-sm rounded-xl p-4">
+        <div
+          class="flex-1 border border-slate-300 bg-white/40 shadow-md shadow-slate-200 rounded-xl p-4"
+        >
           <p class="text-lg font-bold">當前有效生產狀態比例</p>
           <div>
             <p class="my-2 m-0 text-left text-3xl font-bold text-green-500">
@@ -172,7 +177,7 @@ const handleSectionClick = (label: string, value: number) => {
         </div>
       </div>
     </template>
-    <MachineList :machines="machines" :loading="loading" :error="error" class="my-5" />
+    <Machines :machines="machines" :loading="loading" :error="error" class="my-5" />
   </div>
 </template>
 
