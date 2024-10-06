@@ -1,6 +1,6 @@
 /* color palette from <https://github.com/vuejs/theme> */
 :root {
-  --vt-c-white: #d3d3d3;
+  --vt-c-white: linear-gradient(135deg, #dbe4fe 0%, #ede1fc 100%);
   --vt-c-white-soft: #f8f8f8;
   --vt-c-white-mute: #f2f2f2;
 
@@ -18,7 +18,7 @@
   --vt-c-text-light-1: var(--vt-c-indigo);
   --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
   --vt-c-text-dark-1: var(--vt-c-white);
-  --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
+  --vt-c-text-dark-2: rgba(247, 247, 247, 0.866);
 }
 
 /* semantic color variables for this project */
@@ -35,20 +35,6 @@
 
   --section-gap: 160px;
 }
-/* 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: var(--vt-c-black);
-    --color-background-soft: var(--vt-c-black-soft);
-    --color-background-mute: var(--vt-c-black-mute);
-
-    --color-border: var(--vt-c-divider-dark-2);
-    --color-border-hover: var(--vt-c-divider-dark-1);
-
-    --color-heading: var(--vt-c-text-dark-1);
-    --color-text: var(--vt-c-text-dark-2);
-  }
-} */
 
 *,
 *::before,
@@ -59,9 +45,9 @@
 }
 
 body {
+  @apply bg-gradient-to-tr from-blue-100/40 to-violet-100/40;
   min-height: 100vh;
   color: var(--color-text);
-  background: linear-gradient(135deg, #e8eeff 0%, #f3e9ff 100%);
   transition:
     color 0.5s,
     background-color 0.5s;
@@ -83,13 +69,4 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* Add these new styles */
-.bg-white {
-  background-color: rgba(255, 255, 255, 0.7) !important;
-}
-
-.backdrop-blur-sm {
-  backdrop-filter: blur(4px);
 }
