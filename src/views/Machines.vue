@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { h, ref, computed, onMounted, watch } from 'vue'
-import { NDataTable, NSpace, NSelect, NInput } from 'naive-ui'
+import { useRoute } from 'vue-router'
+import { NDataTable, NSpace, NSelect, NInput, NButton } from 'naive-ui'
 import type { DataTableColumns, SelectOption } from 'naive-ui'
 import DonutChart from '@/components/charts/DonutChart.vue'
 import type { ChartData, ChartOptions } from 'chart.js'
@@ -22,12 +23,20 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const route = useRoute()
+const currentRoute = computed(() => route.path)
+
+const handleAddNewMachine = () => {
+  // Implement the logic for adding a new machine here
+  console.log('Add new machine button clicked')
+  // You might want to open a modal or navigate to a new page for adding a machine
+}
 
 const statusMap = {
   生產: { name: '生產', color: 'bg-green-200 text-green-800' },
   閒置: { name: '閒置', color: 'bg-orange-200 text-orange-800' },
   當機: { name: '當機', color: 'bg-red-200 text-red-800' },
-  裝機: { name: '裝機', color: 'bg-blue-200 text-blue-800' },
+  裝機: { name: '裝機', color: 'bg-cyan-200 text-cyan-800' },
   工程借機: { name: '工程借機', color: 'bg-purple-200 text-purple-800' },
   其他: { name: '其他', color: 'bg-gray-200 text-gray-800' }
 }
@@ -50,70 +59,15 @@ type RowKey = string | number
 const expandedRowKeys = ref<RowKey[]>([])
 
 const handleExpandChange = (keys: RowKey[]) => {
-  expandedRowKeys.value = keys // accepts both string and number
+  expandedRowKeys.value = keys
 }
 
-// Add this method to programmatically expand a row
 const expandRowById = (id: string) => {
   if (!expandedRowKeys.value.includes(id)) {
     expandedRowKeys.value.push(id)
   }
 }
 
-const filteredAndSortedData = computed(() => {
-  let result = props.machines
-
-  // Apply filtering
-  if (selectedStatuses.value.length > 0) {
-    result = result.filter((machine) => selectedStatuses.value.includes(machine.currentStatus))
-  }
-
-  // Apply search filtering
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(
-      (machine) =>
-        machine.id.toLowerCase().includes(query) ||
-        machine.currentStatus.toLowerCase().includes(query) ||
-        getLastUpdated(machine).toLowerCase().includes(query) ||
-        calculateEffectiveProductionRatio(machine).ratio.toString().includes(query)
-    )
-  }
-
-  // Apply sorting
-  if (sorter.value.columnKey) {
-    result = [...result].sort((a, b) => {
-      let compareA: string | number
-      let compareB: string | number
-
-      // default comparison by string (handles 'id' and 'currentStatus')
-      compareA = a[sorter.value.columnKey as keyof Machine] as string
-      compareB = b[sorter.value.columnKey as keyof Machine] as string
-
-      // handle lastUpdated and productionRatio
-      if (sorter.value.columnKey === 'lastUpdated') {
-        compareA = getLastUpdated(a)
-        compareB = getLastUpdated(b)
-      } else if (sorter.value.columnKey === 'productionRatio') {
-        compareA = calculateEffectiveProductionRatio(a).ratio
-        compareB = calculateEffectiveProductionRatio(b).ratio
-      }
-
-      if (compareA < compareB) return sorter.value.order === 'ascend' ? -1 : 1
-      if (compareA > compareB) return sorter.value.order === 'ascend' ? 1 : -1
-      return 0
-    })
-  }
-
-  return result
-})
-
-const handleSorterChange = (sorterInfo: {
-  columnKey: string
-  order: 'ascend' | 'descend' | null
-}) => {
-  sorter.value = sorterInfo
-}
 const getStatusInfo = (status: string) => {
   return (
     statusMap[status as keyof typeof statusMap] || {
@@ -160,8 +114,15 @@ const calculateEffectiveProductionRatio = (
       productiveTime += duration
     }
 
-    if (index === array.length - 1 && change.status === '當機' && duration > 10 * 60 * 60 * 1000) {
-      isAnomaly = true
+    // Check for anomaly only for the current (last) status
+    if (index === array.length - 1 && change.status === '當機') {
+      const breakdownDuration = now - new Date(change.startTime).getTime()
+      if (breakdownDuration > 24 * 60 * 60 * 1000) {
+        isAnomaly = true
+        console.log(
+          `Machine ${machine.id} is anomalous. Breakdown duration: ${breakdownDuration / (60 * 60 * 1000)} hours`
+        )
+      }
     }
   })
 
@@ -193,12 +154,12 @@ const chartOptions: ChartOptions<'doughnut'> = {
 
 const columns: DataTableColumns<Machine> = [
   {
-    title: '機台編號',
+    title: () => h('span', { class: 'font-bold' }, '機台編號'),
     key: 'id',
     sorter: true
   },
   {
-    title: '當前狀態',
+    title: () => h('span', { class: 'font-bold' }, '當前狀態'),
     key: 'currentStatus',
     sorter: true,
     render(row: Machine) {
@@ -206,22 +167,33 @@ const columns: DataTableColumns<Machine> = [
       return h(
         'span',
         {
-          class: ['font-bold px-3 py-1 rounded-md text-xs', statusInfo.color]
+          class: [
+            'md:font-bold font-semibold md:px-3 px-2 py-1 rounded-md text-xs whitespace-normal md:whitespace-nowrap w-10 md:w-auto inline-block',
+            statusInfo.color
+          ]
         },
         statusInfo.name
       )
     }
   },
   {
-    title: '當前狀態的起始時間',
+    title: () => h('span', { class: 'font-bold' }, '當前狀態之起始時間'),
     key: 'lastUpdated',
     sorter: true,
     render(row: Machine) {
-      return formatDateString(getLastUpdated(row))
+      const lastUpdated = getLastUpdated(row)
+
+      return h(
+        'span',
+        {
+          class: ['font-ten md:text-sm']
+        },
+        formatDateString(lastUpdated)
+      )
     }
   },
   {
-    title: '有效生產比例',
+    title: () => h('span', { class: 'font-bold' }, '有效生產比例'),
     key: 'productionRatio',
     sorter: true,
     render(row: Machine) {
@@ -238,21 +210,29 @@ const columns: DataTableColumns<Machine> = [
               chartData: getChartData(ratio),
               chartOptions: chartOptions,
               centerText: `${ratio}%`,
-              style: 'width: 40px; height: 40px;'
+              style: 'width: 32px; height: 32px;'
             }),
             `${ratio}%`
           ]
         }
       )
     }
-  },
-  {
-    type: 'expand',
-    renderExpand: (row: Machine) => {
-      return h(NDataTable, {
+  }
+]
+
+const expandColumn = {
+  type: 'expand',
+  expandable: (rowData: Machine) => rowData.statusChanges.length > 0,
+  renderExpand: (rowData: Machine) => {
+    return h('div', { class: 'expanded-section' }, [
+      h(NDataTable, {
         columns: [
           {
-            title: '狀態',
+            title: () => h('span', { class: 'machine-id-column' }, '機台編號'),
+            key: 'machineId'
+          },
+          {
+            title: '歷史狀態',
             key: 'status',
             render: (rowData: { status: string }) => {
               const statusInfo = getStatusInfo(rowData.status)
@@ -271,17 +251,74 @@ const columns: DataTableColumns<Machine> = [
             render: (rowData: { startTime: string }) => formatDateString(rowData.startTime)
           }
         ],
-        data: row.statusChanges.map((change, index, array) => ({
+        data: rowData.statusChanges.map((change, index) => ({
+          key: `${rowData.id}-${index}`,
+          machineId: index === 0 ? rowData.id : '', // Only show the machine ID for the first row
           status: change.status,
-          startTime: change.startTime,
-          endTime: array[index + 1]?.startTime || new Date().toISOString()
+          startTime: change.startTime
         })),
         bordered: false,
-        size: 'small'
+        size: 'small',
+        class: 'inner-expanded-table'
       })
-    }
+    ])
   }
-]
+}
+
+columns.unshift(expandColumn as DataTableColumns<Machine>[number])
+
+const filteredAndSortedData = computed(() => {
+  let result = props.machines.map((machine) => ({
+    key: machine.id,
+    ...machine
+  }))
+
+  if (selectedStatuses.value.length > 0) {
+    result = result.filter((machine) => selectedStatuses.value.includes(machine.currentStatus))
+  }
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(
+      (machine) =>
+        machine.id.toLowerCase().includes(query) ||
+        machine.currentStatus.toLowerCase().includes(query) ||
+        getLastUpdated(machine).toLowerCase().includes(query) ||
+        calculateEffectiveProductionRatio(machine).ratio.toString().includes(query)
+    )
+  }
+
+  if (sorter.value.columnKey) {
+    result = [...result].sort((a, b) => {
+      let compareA: string | number
+      let compareB: string | number
+
+      compareA = a[sorter.value.columnKey as keyof Machine] as string
+      compareB = b[sorter.value.columnKey as keyof Machine] as string
+
+      if (sorter.value.columnKey === 'lastUpdated') {
+        compareA = getLastUpdated(a)
+        compareB = getLastUpdated(b)
+      } else if (sorter.value.columnKey === 'productionRatio') {
+        compareA = calculateEffectiveProductionRatio(a).ratio
+        compareB = calculateEffectiveProductionRatio(b).ratio
+      }
+
+      if (compareA < compareB) return sorter.value.order === 'ascend' ? -1 : 1
+      if (compareA > compareB) return sorter.value.order === 'ascend' ? 1 : -1
+      return 0
+    })
+  }
+
+  return result
+})
+
+const handleSorterChange = (sorterInfo: {
+  columnKey: string
+  order: 'ascend' | 'descend' | null
+}) => {
+  sorter.value = sorterInfo
+}
 
 onMounted(() => {
   console.log(
@@ -290,7 +327,6 @@ onMounted(() => {
   )
 })
 
-// Log for debugging
 watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
   console.log('Selected statuses:', newStatuses)
   console.log('Search query:', newQuery)
@@ -305,6 +341,14 @@ watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
     >
       <h2 class="text-xl font-bold text-left">機台列表 共{{ filteredAndSortedData.length }}台</h2>
       <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+        <NButton
+          v-if="['/machines'].includes(currentRoute)"
+          @click="handleAddNewMachine"
+          type="primary"
+          class="whitespace-nowrap"
+        >
+          新增機台
+        </NButton>
         <NInput
           v-model:value="searchQuery"
           type="text"
@@ -329,7 +373,8 @@ watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
       :bordered="false"
       :expanded-row-keys="expandedRowKeys"
       @update:expanded-row-keys="handleExpandChange"
-      @sorter-change="handleSorterChange"
+      @update:sorter="handleSorterChange"
+      class="main-table"
     />
   </div>
 </template>
@@ -339,6 +384,49 @@ watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
   transition: border-color 0.3s;
 }
 :deep(.n-data-table-td:hover) {
-  border-color: #848484 !important;
+  border-color: #848484;
+}
+.custom-table :deep(.n-data-table-th) {
+  background-color: rgb(71, 85, 105, 0.3);
+  color: white;
+}
+.font-ten {
+  font-size: 6px;
+}
+.custom-table :deep(.n-data-table-tr) {
+  margin-bottom: 4px;
+}
+.expanded-section {
+  margin: 16px 0;
+}
+
+:deep(.inner-expanded-table) {
+  background-color: rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+}
+
+:deep(.inner-expanded-table .n-data-table-wrapper) {
+  padding: 2rem;
+}
+
+:deep(.inner-expanded-table .n-data-table-td) {
+  background-color: transparent !important;
+}
+
+:deep(.inner-expanded-table .n-data-table-th) {
+  background-color: rgba(0, 0, 0, 0.07) !important;
+}
+
+:deep(.main-table .n-data-table-th:nth-child(2)),
+:deep(.inner-expanded-table .machine-id-column) {
+  width: 22.5%;
+}
+
+:deep(.inner-expanded-table .n-data-table-td:first-child:not(:first-of-type)) {
+  color: transparent;
+}
+
+:deep(.inner-expanded-table .n-data-table-tr:not(:last-child)) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 </style>

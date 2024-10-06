@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import type { ChartData, ChartOptions } from 'chart.js'
-// import { fetchMachineData } from '../api/machines'
 import DonutChart from '@/components/charts/DonutChart.vue'
-import MachineList from '../views/MachineList.vue'
+import Machines from './Machines.vue'
 import type { Machine, Status } from '../types/types'
 
 // Define props
@@ -13,14 +12,13 @@ const props = defineProps<{
   error: string | null
 }>()
 
-// Define colors for each status
 const statusColors: Record<Status, string> = {
-  生產: '#84cc16',
-  閒置: '#f97316',
-  當機: '#ef4444',
-  裝機: '#fbbf24',
-  工程借機: '#06b6d4',
-  其他: '#64748b'
+  生產: '#a3e635',
+  閒置: '#fb923c',
+  當機: '#f87171',
+  裝機: '#22d3ee',
+  工程借機: '#a78bfa',
+  其他: '#94a3b8'
 }
 
 const statusCounts = computed(() => {
@@ -121,17 +119,17 @@ const centerText = computed(() => `Total: ${totalMachines.value}`)
 const handleSectionClick = (label: string, value: number) => {
   console.log(`Clicked on ${label} with value ${value}`)
 }
-
-// Simulate real-time updates
 // setInterval(fetchData, 500000) // Fetch new data every 5 seconds
 </script>
 
 <template>
   <div class="flex flex-col w-full">
-    <div v-if="loading">Loading...</div>
+    <div class="flex text-2xl font-bold text-slate-500" v-if="loading">Loading...</div>
     <div v-else-if="error">{{ error }}</div>
     <template v-else>
-      <div class="w-full border-2 border-gray-200 rounded-md p-4 mb-4">
+      <div
+        class="w-full border border-slate-300 bg-white/40 shadow-md shadow-slate-200 rounded-xl p-5 mb-4"
+      >
         <p class="text-lg font-bold">當前機台狀態分佈</p>
         <div class="chart-wrapper">
           <DonutChart
@@ -143,7 +141,9 @@ const handleSectionClick = (label: string, value: number) => {
         </div>
       </div>
       <div class="flex md:flex-row flex-col w-full gap-4">
-        <div class="flex-1 border-2 border-gray-200 rounded-md p-4">
+        <div
+          class="flex-1 border border-slate-300 bg-white/40 shadow-md shadow-slate-200 rounded-xl p-5"
+        >
           <p class="text-lg font-bold">當前當機異常比例</p>
           <div>
             <p class="my-2 m-0 text-left text-3xl font-bold text-red-500">
@@ -158,7 +158,9 @@ const handleSectionClick = (label: string, value: number) => {
             </div>
           </div>
         </div>
-        <div class="flex-1 border-2 border-gray-200 rounded-md p-4">
+        <div
+          class="flex-1 border border-slate-300 bg-white/40 shadow-md shadow-slate-200 rounded-xl p-4"
+        >
           <p class="text-lg font-bold">當前有效生產狀態比例</p>
           <div>
             <p class="my-2 m-0 text-left text-3xl font-bold text-green-500">
@@ -175,15 +177,15 @@ const handleSectionClick = (label: string, value: number) => {
         </div>
       </div>
     </template>
-    <MachineList :machines="machines" :loading="loading" :error="error" class="my-5" />
+    <Machines :machines="machines" :loading="loading" :error="error" class="my-5" />
   </div>
 </template>
 
 <style scoped>
 .chart-wrapper {
   position: relative;
-  height: 300px;
-  width: 300px;
+  height: 320px;
+  width: 320px;
   margin: 0 auto;
   padding: 0.3rem;
 }
