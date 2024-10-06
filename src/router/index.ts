@@ -4,8 +4,8 @@ import type { RouteRecordRaw } from 'vue-router'
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    name: 'Dashboard',
-    component: () => import('../views/Dashboard.vue')
+    name: 'HomeDashboard',
+    component: () => import('../views/HomeDashboard.vue')
   },
   {
     path: '/machines',
