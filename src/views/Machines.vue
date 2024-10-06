@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { h, ref, computed, onMounted, watch } from 'vue'
-import { NDataTable, NSpace, NSelect, NInput } from 'naive-ui'
+import { useRoute } from 'vue-router'
+import { NDataTable, NSpace, NSelect, NInput, NButton } from 'naive-ui'
 import type { DataTableColumns, SelectOption } from 'naive-ui'
 import DonutChart from '@/components/charts/DonutChart.vue'
 import type { ChartData, ChartOptions } from 'chart.js'
@@ -22,6 +23,14 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const route = useRoute()
+const currentRoute = computed(() => route.path)
+
+const handleAddNewMachine = () => {
+  // Implement the logic for adding a new machine here
+  console.log('Add new machine button clicked')
+  // You might want to open a modal or navigate to a new page for adding a machine
+}
 
 const statusMap = {
   生產: { name: '生產', color: 'bg-green-200 text-green-800' },
@@ -171,9 +180,6 @@ const columns: DataTableColumns<Machine> = [
     title: () => h('span', { class: 'font-bold' }, '當前狀態之起始時間'),
     key: 'lastUpdated',
     sorter: true,
-    // render(row: Machine) {
-    //   return formatDateString(getLastUpdated(row))
-    // },
     render(row: Machine) {
       const lastUpdated = getLastUpdated(row)
 
@@ -218,40 +224,48 @@ const expandColumn = {
   type: 'expand',
   expandable: (rowData: Machine) => rowData.statusChanges.length > 0,
   renderExpand: (rowData: Machine) => {
-    return h(NDataTable, {
-      columns: [
-        {
-          title: '歷史狀態',
-          key: 'status',
-          render: (rowData: { status: string }) => {
-            const statusInfo = getStatusInfo(rowData.status)
-            return h(
-              'span',
-              {
-                class: ['font-bold px-3 py-1 rounded-md text-xs', statusInfo.color]
-              },
-              statusInfo.name
-            )
+    return h('div', { class: 'expanded-section' }, [
+      h(NDataTable, {
+        columns: [
+          {
+            title: () => h('span', { class: 'machine-id-column' }, '機台編號'),
+            key: 'machineId'
+          },
+          {
+            title: '歷史狀態',
+            key: 'status',
+            render: (rowData: { status: string }) => {
+              const statusInfo = getStatusInfo(rowData.status)
+              return h(
+                'span',
+                {
+                  class: ['font-bold px-3 py-1 rounded-md text-xs', statusInfo.color]
+                },
+                statusInfo.name
+              )
+            }
+          },
+          {
+            title: '開始時間',
+            key: 'startTime',
+            render: (rowData: { startTime: string }) => formatDateString(rowData.startTime)
           }
-        },
-        {
-          title: '開始時間',
-          key: 'startTime',
-          render: (rowData: { startTime: string }) => formatDateString(rowData.startTime)
-        }
-      ],
-      data: rowData.statusChanges.map((change, index) => ({
-        key: `${rowData.id}-${index}`,
-        status: change.status,
-        startTime: change.startTime
-      })),
-      bordered: false,
-      size: 'small'
-    })
+        ],
+        data: rowData.statusChanges.map((change, index) => ({
+          key: `${rowData.id}-${index}`,
+          machineId: index === 0 ? rowData.id : '', // Only show the machine ID for the first row
+          status: change.status,
+          startTime: change.startTime
+        })),
+        bordered: false,
+        size: 'small',
+        class: 'inner-expanded-table'
+      })
+    ])
   }
 }
 
-columns.unshift(expandColumn)
+columns.unshift(expandColumn as DataTableColumns<Machine>[number])
 
 const filteredAndSortedData = computed(() => {
   let result = props.machines.map((machine) => ({
@@ -327,6 +341,14 @@ watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
     >
       <h2 class="text-xl font-bold text-left">機台列表 共{{ filteredAndSortedData.length }}台</h2>
       <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+        <NButton
+          v-if="['/machines'].includes(currentRoute)"
+          @click="handleAddNewMachine"
+          type="primary"
+          class="whitespace-nowrap"
+        >
+          新增機台
+        </NButton>
         <NInput
           v-model:value="searchQuery"
           type="text"
@@ -352,6 +374,7 @@ watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
       :expanded-row-keys="expandedRowKeys"
       @update:expanded-row-keys="handleExpandChange"
       @update:sorter="handleSorterChange"
+      class="main-table"
     />
   </div>
 </template>
@@ -361,14 +384,49 @@ watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
   transition: border-color 0.3s;
 }
 :deep(.n-data-table-td:hover) {
-  border-color: #848484 !important;
+  border-color: #848484;
 }
-/* New styles for the table header */
 .custom-table :deep(.n-data-table-th) {
-  background-color: rgb(71, 85, 105, 0.3); /* Change this to your desired background color */
+  background-color: rgb(71, 85, 105, 0.3);
   color: white;
 }
 .font-ten {
   font-size: 6px;
+}
+.custom-table :deep(.n-data-table-tr) {
+  margin-bottom: 4px;
+}
+.expanded-section {
+  margin: 16px 0;
+}
+
+:deep(.inner-expanded-table) {
+  background-color: rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+}
+
+:deep(.inner-expanded-table .n-data-table-wrapper) {
+  padding: 2rem;
+}
+
+:deep(.inner-expanded-table .n-data-table-td) {
+  background-color: transparent !important;
+}
+
+:deep(.inner-expanded-table .n-data-table-th) {
+  background-color: rgba(0, 0, 0, 0.07) !important;
+}
+
+:deep(.main-table .n-data-table-th:nth-child(2)),
+:deep(.inner-expanded-table .machine-id-column) {
+  width: 22.5%;
+}
+
+:deep(.inner-expanded-table .n-data-table-td:first-child:not(:first-of-type)) {
+  color: transparent;
+}
+
+:deep(.inner-expanded-table .n-data-table-tr:not(:last-child)) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 </style>
