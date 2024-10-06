@@ -221,7 +221,7 @@ const expandColumn = {
               return h(
                 'span',
                 {
-                  class: ['font-bold px-3 py-1 rounded-md text-xxs', statusInfo.color]
+                  class: ['font-bold px-3 py-1 rounded-md text-xs', statusInfo.color]
                 },
                 statusInfo.name
               )
