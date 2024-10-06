@@ -11,10 +11,6 @@ defineProps<{
   percentage?: string
   percentageColor?: string
 }>()
-
-defineEmits<{
-  (e: 'sectionClick', label: string, value: number): void
-}>()
 </script>
 
 <template>
@@ -25,12 +21,7 @@ defineEmits<{
         {{ percentage }}%
       </p>
       <div class="chart-wrapper">
-        <DonutChart
-          :chartData="chartData"
-          :chartOptions="chartOptions"
-          :centerText="centerText"
-          @sectionClick="$emit('sectionClick', $event)"
-        />
+        <DonutChart :chartData="chartData" :chartOptions="chartOptions" :centerText="centerText" />
       </div>
     </div>
   </div>

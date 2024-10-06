@@ -19,10 +19,8 @@ const fetchData = async () => {
   try {
     machines.value = await fetchMachineData()
     lastUpdated.value = new Date().toLocaleTimeString()
-    console.log(machines.value)
   } catch (e) {
     error.value = 'Failed to fetch data'
-    console.error(e)
   } finally {
     loading.value = false
   }

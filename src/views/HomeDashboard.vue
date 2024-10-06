@@ -115,9 +115,6 @@ const workingChartData = computed<ChartData<'doughnut'>>(() => {
 
 const centerText = computed(() => `Total: ${totalMachines.value}`)
 
-const handleSectionClick = (label: string, value: number) => {
-  console.log(`Clicked on ${label} with value ${value}`)
-}
 // setInterval(fetchData, 500000) // Fetch new data every 5 seconds
 </script>
 
@@ -132,7 +129,6 @@ const handleSectionClick = (label: string, value: number) => {
         :chartOptions="chartOptions"
         :centerText="centerText"
         class="w-full mb-4"
-        @sectionClick="handleSectionClick"
       />
       <div class="flex md:flex-row flex-col w-full gap-4">
         <ChartComponent
