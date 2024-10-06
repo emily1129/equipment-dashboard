@@ -1,39 +1,75 @@
-# equipment_dashboard
+# Equipment Monitoring Dashboard
 
-This template should help get you started developing with Vue 3 in Vite.
+## Overview
 
-## Recommended IDE Setup
+This Equipment Monitoring Dashboard is a web application designed to track and visualize the status and performance of industrial equipment across six different statuses. It provides insights through various charts and data visualizations, enabling efficient monitoring.
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## Features
 
-## Type Support for `.vue` Imports in TS
+1. **Interactive Dashboard**:
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+   - Click on chart sections for detailed information
+   - Filter data based on equipment status, time range, etc.
 
-## Customize configuration
+2. **Performance Metrics**:
 
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+   - Effective Production Ratio
+   - Uptime/Downtime Ratio
+   - Efficiency Ratio
 
-## Project Setup
+3. **Responsive Design**:
+   - Optimized for both desktop and mobile viewing
 
-```sh
-npm install
-```
+## Technology Stack
 
-### Compile and Hot-Reload for Development
+- Frontend: Vue.js 3 with TypeScript
+- UI Framework: Tailwind + Naive UI
+- Charting Library: Chart.js with Vue-Chart-3
+- Build Tool: Vite
 
-```sh
-npm run dev
-```
+## Getting Started
 
-### Type-Check, Compile and Minify for Production
+### Prerequisites
 
-```sh
-npm run build
-```
+- Node.js (v14.0 or later)
+- npm (v6.0 or later)
 
-### Lint with [ESLint](https://eslint.org/)
+### Installation
 
-```sh
-npm run lint
-```
+1. Clone the repository:
+
+   ```
+   git clone https://github.com/emily1129/equipment-dashboard.git
+   ```
+
+2. Navigate to the project directory:
+
+   ```
+   cd equipment-dashboard
+   ```
+
+3. Install dependencies:
+   ```
+   npm install
+   ```
+
+### Running the Project
+
+1. For development mode:
+
+   ```
+   npm run dev
+   ```
+
+   This will start the development server
+
+2. For production build:
+   ```
+   npm run build
+   ```
+   This will generate production-ready files in the `dist` directory.
+
+## Configuration
+
+- Environment variables can be set in `.env` files for different environments.
+- Adjust the `vite.config.ts` file for build and development configurations.
