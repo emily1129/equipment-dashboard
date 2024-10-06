@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { h, ref, computed, onMounted, watch } from 'vue'
+import { h, ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { NDataTable, NSpace, NSelect, NInput, NButton } from 'naive-ui'
+import { NDataTable, NSpace, NSelect, NInput } from 'naive-ui'
 import type { DataTableColumns, SelectOption } from 'naive-ui'
 import DonutChart from '@/components/charts/DonutChart.vue'
 import type { ChartData, ChartOptions } from 'chart.js'
@@ -25,12 +25,6 @@ interface Props {
 const props = defineProps<Props>()
 const route = useRoute()
 const currentRoute = computed(() => route.path)
-
-const handleAddNewMachine = () => {
-  // Implement the logic for adding a new machine here
-  console.log('Add new machine button clicked')
-  // You might want to open a modal or navigate to a new page for adding a machine
-}
 
 const statusMap = {
   生產: { name: '生產', color: 'bg-green-200 text-green-800' },
@@ -60,12 +54,6 @@ const expandedRowKeys = ref<RowKey[]>([])
 
 const handleExpandChange = (keys: RowKey[]) => {
   expandedRowKeys.value = keys
-}
-
-const expandRowById = (id: string) => {
-  if (!expandedRowKeys.value.includes(id)) {
-    expandedRowKeys.value.push(id)
-  }
 }
 
 const getStatusInfo = (status: string) => {
@@ -114,14 +102,11 @@ const calculateEffectiveProductionRatio = (
       productiveTime += duration
     }
 
-    // Check for anomaly only for the current (last) status
+    // check for anomaly only for the current (last) status
     if (index === array.length - 1 && change.status === '當機') {
       const breakdownDuration = now - new Date(change.startTime).getTime()
       if (breakdownDuration > 24 * 60 * 60 * 1000) {
         isAnomaly = true
-        console.log(
-          `Machine ${machine.id} is anomalous. Breakdown duration: ${breakdownDuration / (60 * 60 * 1000)} hours`
-        )
       }
     }
   })
@@ -186,7 +171,7 @@ const columns: DataTableColumns<Machine> = [
       return h(
         'span',
         {
-          class: ['font-ten md:text-sm']
+          class: ['text-xxs md:text-sm']
         },
         formatDateString(lastUpdated)
       )
@@ -239,7 +224,7 @@ const expandColumn = {
               return h(
                 'span',
                 {
-                  class: ['font-bold px-3 py-1 rounded-md text-xs', statusInfo.color]
+                  class: ['font-bold px-3 py-1 rounded-md text-xxs', statusInfo.color]
                 },
                 statusInfo.name
               )
@@ -248,12 +233,20 @@ const expandColumn = {
           {
             title: '開始時間',
             key: 'startTime',
-            render: (rowData: { startTime: string }) => formatDateString(rowData.startTime)
+            render: (rowData: { startTime: string }) => {
+              return h(
+                'span',
+                {
+                  class: ['text-xxs md:text-sm']
+                },
+                formatDateString(rowData.startTime)
+              )
+            }
           }
         ],
         data: rowData.statusChanges.map((change, index) => ({
           key: `${rowData.id}-${index}`,
-          machineId: index === 0 ? rowData.id : '', // Only show the machine ID for the first row
+          machineId: index === 0 ? rowData.id : '', // only show the machine ID for the first row
           status: change.status,
           startTime: change.startTime
         })),
@@ -265,6 +258,7 @@ const expandColumn = {
   }
 }
 
+// add the expandColumn to the beginning (left side) of the main table's columns
 columns.unshift(expandColumn as DataTableColumns<Machine>[number])
 
 const filteredAndSortedData = computed(() => {
@@ -283,8 +277,7 @@ const filteredAndSortedData = computed(() => {
       (machine) =>
         machine.id.toLowerCase().includes(query) ||
         machine.currentStatus.toLowerCase().includes(query) ||
-        getLastUpdated(machine).toLowerCase().includes(query) ||
-        calculateEffectiveProductionRatio(machine).ratio.toString().includes(query)
+        getLastUpdated(machine).toLowerCase().includes(query)
     )
   }
 
@@ -320,18 +313,11 @@ const handleSorterChange = (sorterInfo: {
   sorter.value = sorterInfo
 }
 
-onMounted(() => {
-  console.log(
-    'Machine statuses:',
-    props.machines.map((m) => m.currentStatus)
-  )
-})
-
-watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
-  console.log('Selected statuses:', newStatuses)
-  console.log('Search query:', newQuery)
-  console.log('Filtered and sorted data:', filteredAndSortedData.value)
-})
+// watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
+//   console.log('Selected statuses:', newStatuses)
+//   console.log('Search query:', newQuery)
+//   console.log('Filtered and sorted data:', filteredAndSortedData.value)
+// })
 </script>
 
 <template>
@@ -341,18 +327,10 @@ watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
     >
       <h2 class="text-xl font-bold text-left">機台列表 共{{ filteredAndSortedData.length }}台</h2>
       <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-        <NButton
-          v-if="['/machines'].includes(currentRoute)"
-          @click="handleAddNewMachine"
-          type="primary"
-          class="whitespace-nowrap"
-        >
-          新增機台
-        </NButton>
         <NInput
           v-model:value="searchQuery"
           type="text"
-          placeholder="搜尋機台編號"
+          placeholder="搜尋機台編號、狀態、最後更新時間"
           class="w-full sm:w-64"
         />
         <NSelect
@@ -390,8 +368,8 @@ watch([selectedStatuses, searchQuery], ([newStatuses, newQuery]) => {
   background-color: rgb(71, 85, 105, 0.3);
   color: white;
 }
-.font-ten {
-  font-size: 6px;
+.text-xxs {
+  font-size: 0.5rem;
 }
 .custom-table :deep(.n-data-table-tr) {
   margin-bottom: 4px;
