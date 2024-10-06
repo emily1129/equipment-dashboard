@@ -44,7 +44,7 @@ const handleLinkClick = (pageName: string) => {
 
 <template>
   <div class="flex flex-col md:flex-row h-screen w-full font-sans">
-    <!-- Header: hamburger + title + current page on sm screens -->
+    <!-- hamburger + title + current page on sm screens -->
     <header class="flex flex-col md:hidden px-4 py-4 border-b border-slate-300">
       <div class="flex justify-between items-center">
         <p class="font-extrabold text-2xl">機台狀態看板系統</p>
@@ -76,7 +76,7 @@ const handleLinkClick = (pageName: string) => {
         <div class="flex justify-between md:block">
           <p
             class="font-extrabold text-2xl px-4 md:pt-4 md:pb-7 py-4 cursor-pointer"
-            @click="$router.push('/')"
+            @click="router.push({ name: 'Dashboard' })"
           >
             機台狀態看板系統
           </p>
@@ -117,7 +117,7 @@ const handleLinkClick = (pageName: string) => {
             </svg>
             機台分佈
           </RouterLink>
-          <!-- Add more navigation links -->
+          <!-- more navigation links -->
         </nav>
       </div>
       <div class="h-6 mt-auto py-2 px-4 w-full flex md:justify-start justify-end">
@@ -125,7 +125,7 @@ const handleLinkClick = (pageName: string) => {
       </div>
     </aside>
 
-    <!-- Main content -->
+    <!-- main content -->
     <main class="flex-1 flex flex-col">
       <header
         class="hidden md:flex justify-between items-center px-8 pt-6 pb-4 border-b border-slate-300"

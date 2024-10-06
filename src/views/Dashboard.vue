@@ -63,10 +63,9 @@ const errorEquipmentRatio = computed(() =>
     : '0'
 )
 
-// Prepare data for error chart
+// prepare data for error chart
 const errorChartData = computed<ChartData<'doughnut'>>(() => {
   const errorCount = statusCounts.value['當機'] || 0
-  // const totalMachines = props.machines.length
   return {
     labels: ['當機', '正常'],
     datasets: [
@@ -78,7 +77,7 @@ const errorChartData = computed<ChartData<'doughnut'>>(() => {
   }
 })
 
-// working machine logic
+// efficientworking machine logic
 const workingCount = computed(() => statusCounts.value['生產'] || 0)
 const packagingCount = computed(() => statusCounts.value['裝機'] || 0)
 const borrowingCount = computed(() => statusCounts.value['工程借機'] || 0)
@@ -92,7 +91,7 @@ const efficientRatio = computed(() => {
     : '0'
 })
 
-// Prepare data for working status chart
+// data for working status chart
 const workingChartData = computed<ChartData<'doughnut'>>(() => {
   const working = statusCounts.value['生產'] || 0
   const packaging = statusCounts.value['裝機'] || 0
